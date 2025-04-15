@@ -2,12 +2,16 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.*;
+import java.util.Map;
+import java.util.HashMap;
 
 public class fmrCadLivro extends JFrame {
     private static final long serialVersionUID = 1L;
     private bd objBD;
     private JTable tabelaLivros;
     private DefaultTableModel modeloTabela;
+    private JComboBox<String> cbAutores;
+    private Map<String, Integer> mapaAutores = new HashMap<>();
 
     public fmrCadLivro() {
         this.objBD = new bd("projeto_biblioteca", "root", "");
@@ -22,37 +26,48 @@ public class fmrCadLivro extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 500);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
+        getContentPane().setLayout(new BorderLayout());
 
-        // ✅ Menu
         JMenuBar menuBar = new JMenuBar();
         setJMenuBar(menuBar);
 
         JMenu MenuCadastrar = new JMenu("Cadastrar");
         menuBar.add(MenuCadastrar);
-        JMenuItem mntmNewMenuItem = new JMenuItem("Livro");
-        MenuCadastrar.add(mntmNewMenuItem);
-        mntmNewMenuItem.addActionListener(e -> {
+
+        JMenuItem mntmAutor = new JMenuItem("Autor");
+        MenuCadastrar.add(mntmAutor);
+        mntmAutor.addActionListener(e -> {
+            fmrCadastroAutor cadastroAutor = new fmrCadastroAutor(objBD);
+            cadastroAutor.setVisible(true);
+        });
+
+        JMenuItem mntmLivro = new JMenuItem("Livro");
+        MenuCadastrar.add(mntmLivro);
+        mntmLivro.addActionListener(e -> {
             fmrCadastroLivro cadastro = new fmrCadastroLivro(objBD);
             cadastro.setVisible(true);
         });
 
         JMenu MenuConsultar = new JMenu("Consultar");
         menuBar.add(MenuConsultar);
+
         JMenu MenuConta = new JMenu("Conta");
         menuBar.add(MenuConta);
+
+        JMenuItem SairMenuItem = new JMenuItem("Sair");
+        MenuConta.add(SairMenuItem);
+        SairMenuItem.addActionListener(e -> System.exit(0));
+
         JMenu MenuAjuda = new JMenu("Ajuda");
         menuBar.add(MenuAjuda);
 
-        // ✅ Tabela de livros
         modeloTabela = new DefaultTableModel(new String[]{"ID", "Título", "Autor", "Categoria"}, 0);
         tabelaLivros = new JTable(modeloTabela);
         JScrollPane scrollPane = new JScrollPane(tabelaLivros);
-        add(scrollPane, BorderLayout.CENTER);
+        getContentPane().add(scrollPane, BorderLayout.NORTH);
 
         JButton btnEmprestar = new JButton("Emprestar livro selecionado");
-        add(btnEmprestar, BorderLayout.SOUTH);
-
+        getContentPane().add(btnEmprestar, BorderLayout.SOUTH);
         btnEmprestar.addActionListener(e -> emprestarLivro());
 
         carregarLivros();
@@ -94,7 +109,16 @@ public class fmrCadLivro extends JFrame {
 
         int idLivro = (int) modeloTabela.getValueAt(linhaSelecionada, 0);
         String idUsuarioStr = JOptionPane.showInputDialog(this, "ID do usuário:");
+        if (idUsuarioStr == null || idUsuarioStr.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Operação cancelada.");
+            return;
+        }
+
         String dataDevolucao = JOptionPane.showInputDialog(this, "Data de devolução prevista (AAAA-MM-DD):");
+        if (dataDevolucao == null || dataDevolucao.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Operação cancelada.");
+            return;
+        }
 
         try {
             int idUsuario = Integer.parseInt(idUsuarioStr);
@@ -109,6 +133,7 @@ public class fmrCadLivro extends JFrame {
                 stmt.executeUpdate();
 
                 JOptionPane.showMessageDialog(this, "Empréstimo registrado com sucesso!");
+                carregarLivros();
 
             }
         } catch (NumberFormatException e) {
@@ -116,5 +141,16 @@ public class fmrCadLivro extends JFrame {
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Erro ao registrar empréstimo: " + e.getMessage());
         }
+    }
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> {
+            try {
+                fmrCadLivro frame = new fmrCadLivro();
+                frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 }
